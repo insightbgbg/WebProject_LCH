@@ -18,7 +18,7 @@ public class MemberController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
-
+// github 연동 테스트2
         if ("register".equals(action)) {
             // 회원 가입 처리
             WebProjectDTO.Member member = new WebProjectDTO.Member();
