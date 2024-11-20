@@ -12,9 +12,9 @@ import java.util.Map;
 public class WebProjectDAO {
 
 /*
-    ************************************************
-    데이터베이스 연결 메서드 - DBCP(DataSource) 사용
-    ************************************************
+************************************************
+    DB 연결
+************************************************
 */
 
 	private Connection getConnection() throws SQLException {
@@ -34,6 +34,109 @@ public class WebProjectDAO {
 	    }
 	}
 
+/*
+************************************************
+   댓글 관리
+************************************************
+*/
+
+	// 댓글 추가	
+	public void addComment(WebProjectDTO.Comment comment) {
+	    String sql = "INSERT INTO comments (comment_id, board_id, member_id, content, created_at, like_count, is_deleted) " +
+	                 "VALUES (comments_seq.NEXTVAL, ?, ?, ?, SYSDATE, 0, 'N')";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setInt(1, comment.getBoardId());
+	        stmt.setString(2, comment.getMemberId());
+	        stmt.setString(3, comment.getContent());
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	// 댓글 조회	(comment_id)
+	public WebProjectDTO.Comment getCommentById(int commentId) {
+	    String sql = "SELECT * FROM comments WHERE comment_id = ? AND is_deleted = 'N'";
+	    WebProjectDTO.Comment comment = null;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setInt(1, commentId);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                comment = new WebProjectDTO.Comment();
+	                comment.setCommentId(rs.getInt("comment_id"));
+	                comment.setBoardId(rs.getInt("board_id"));
+	                comment.setMemberId(rs.getString("member_id"));
+	                comment.setContent(rs.getString("content"));
+	                comment.setCreatedAt(rs.getDate("created_at"));
+	                comment.setUpdatedAt(rs.getDate("updated_at"));
+	                comment.setLikeCount(rs.getInt("like_count"));
+	                comment.setIsDeleted(rs.getString("is_deleted"));
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return comment;
+	}
+	
+	
+	// 댓글 조회	(board_id)
+	public List<WebProjectDTO.Comment> getCommentsByBoardId(int boardId) {
+	    List<WebProjectDTO.Comment> comments = new ArrayList<>();
+	    String sql = "SELECT * FROM comments WHERE board_id = ? AND is_deleted = 'N' ORDER BY created_at ASC";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setInt(1, boardId);
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            while (rs.next()) {
+	                WebProjectDTO.Comment comment = new WebProjectDTO.Comment();
+	                comment.setCommentId(rs.getInt("comment_id"));
+	                comment.setBoardId(rs.getInt("board_id"));
+	                comment.setMemberId(rs.getString("member_id"));
+	                comment.setContent(rs.getString("content"));
+	                comment.setCreatedAt(rs.getDate("created_at"));
+	                comment.setUpdatedAt(rs.getDate("updated_at"));
+	                comment.setLikeCount(rs.getInt("like_count"));
+	                comment.setIsDeleted(rs.getString("is_deleted"));
+	                comments.add(comment);
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return comments;
+	}
+
+	// 댓글 삭제	
+	public void deleteComment(int commentId) {
+	    String sql = "UPDATE comments SET is_deleted = 'Y' WHERE comment_id = ?";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setInt(1, commentId);
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	// 댓글 수정	
+	public void updateComment(WebProjectDTO.Comment comment) {
+	    String sql = "UPDATE comments SET content = ?, updated_at = SYSDATE WHERE comment_id = ?";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setString(1, comment.getContent());
+	        stmt.setInt(2, comment.getCommentId());
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	
 /*
 ************************************************
    회원 관리
@@ -322,6 +425,10 @@ System.out.println("================== getContent : " +board.getContent());
             pstmt.setString(3, board.getTitle());
             pstmt.setString(4, board.getContent());
 
+        	// 디버깅
+        	System.out.println("================== DAO addBoard query ====================" + query);
+            
+            
             // 쿼리 실행
             int result = pstmt.executeUpdate();
             System.out.println("Rows inserted: " + result);
@@ -595,4 +702,12 @@ System.out.println("================== getContent : " +board.getContent());
         return totalCount;
     }
 }
+
+
+/*
+************************************************
+    코멘트 관리
+************************************************
+*/
+
     

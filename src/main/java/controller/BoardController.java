@@ -1,6 +1,7 @@
 package controller;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class BoardController extends HttpServlet {
         if (loggedInUser == null) { // 로그인 확인
             response.sendRedirect("login.jsp");
             return;
-        }
+        } 
 
         switch (action) {
             case "add": // 글 작성
@@ -56,15 +57,42 @@ public class BoardController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getParameter("action");
 
+    	String action = request.getParameter("action");
+
+    	HttpSession session = request.getSession(false); // 기존 세션만 가져옴
+        WebProjectDTO.Member loggedInUser = (session != null) ? (WebProjectDTO.Member) session.getAttribute("loggedInUser") : null;
+        
         switch (action) {
             case "add": // 글 작성 페이지
-                request.getRequestDispatcher("board_add.jsp").forward(request, response);
+
+                if (loggedInUser == null) { // 로그인 확인
+                    response.sendRedirect("login.jsp");
+                    return;
+                }
+            	
+            	
+            	/* String boardType = request.getParameter("boardType"); 
+            	String boardType = URLDecoder.decode(request.getParameter("boardType"), "UTF-8");
+            	
+            	// 디버깅
+            	System.out.println("================== boardType ======= : " + boardType);
+            	System.out.println("================== loggedInUser ======= : " + loggedInUser);
+            	
+                // 글쓰기 권한 제한 (Q&A, File은 회원만 가능)
+                if ((boardType.equalsIgnoreCase("q") || boardType.equalsIgnoreCase("file")) && loggedInUser == null) {
+                    // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+                    request.setAttribute("errorMessage", "You must be logged in to post in this board.");
+                    request.getRequestDispatcher("login.jsp").forward(request, response);
+                    return;
+                }  */  	
+            	
+            	request.getRequestDispatcher("board_add.jsp").forward(request, response);
                 break;
 
             case "edit": // 글 수정 페이지
-                handleGetEdit(request, response);
+
+            	handleGetEdit(request, response);
                 break;
 
             case "list": // 게시글 목록
@@ -86,10 +114,13 @@ public class BoardController extends HttpServlet {
 
     // 글 작성 처리
     private void handleAddPost(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws ServletException, IOException {
-        String boardType = request.getParameter("boardType");
-        String title = request.getParameter("title");
+
+    	String boardType = request.getParameter("boardType");
+
+    	String title = request.getParameter("title");
         String content = request.getParameter("content");
 
+        // 모든 항목이 기록되었는데 확인
         if (boardType == null || boardType.isEmpty() || title == null || content == null) {
             request.setAttribute("errorMessage", "All fields are required.");
             request.getRequestDispatcher("board_add.jsp").forward(request, response);
@@ -103,6 +134,11 @@ public class BoardController extends HttpServlet {
         board.setContent(content);
 
         dao.addBoard(board);
+        
+    	// 디버깅
+    	System.out.println("================== boardType ====================" + boardType);
+    	System.out.println("================== title ====================" + title);
+        
         response.sendRedirect("board?action=list");
     }
 
@@ -198,10 +234,10 @@ public class BoardController extends HttpServlet {
     
     private void handleList(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // 게시판 유형 가져오기
-/*        String boardType = request.getParameter("boardType"); */
+    	String boardType = request.getParameter("boardType"); 
 	
-	   String boardTypeParam = request.getParameter("boardType");
-
+	   /* String boardTypeParam = request.getParameter("boardType");
+	   
 	    // DB에 저장된 형식으로 변환
 	    String boardType = null;
 	    if ("free".equalsIgnoreCase(boardTypeParam)) {
@@ -215,10 +251,10 @@ public class BoardController extends HttpServlet {
     	// 디버깅
     	System.out.println("==============boardTypeParam, boardType ================ : " +boardTypeParam +", "+ boardType );
     
-	    
+	    */
     	
         if (boardType == null || boardType.isEmpty()) {
-            boardType = "Free"; // 기본값 설정
+            boardType = "free"; // 기본값 설정
         }
 
         // 페이징 설정
@@ -233,8 +269,19 @@ public class BoardController extends HttpServlet {
         }
 
         Map<String, Object> map = new HashMap<>();
+        
         map.put("boardType", boardType);
 
+     // 검색 조건이 있을 경우 map에 추가
+
+        String searchField = request.getParameter("searchField"); // 검색 필드
+        String searchWord = request.getParameter("searchWord");   // 검색어        
+        
+        if (searchField != null && !searchField.isEmpty() && searchWord != null && !searchWord.isEmpty()) {
+            map.put("searchField", searchField);
+            map.put("searchWord", searchWord);
+        }        
+        
         int totalCount = dao.selectBoardCount(map);
     	// 디버깅
     	System.out.println("==============totalCount ================ : " +totalCount);
@@ -273,12 +320,17 @@ public class BoardController extends HttpServlet {
 
     // 게시글 상세 보기
     private void handleView(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        int boardId = Integer.parseInt(request.getParameter("boardId"));
-        WebProjectDTO.Board board = dao.getBoardById(boardId);
 
+    	int boardId = Integer.parseInt(request.getParameter("boardId"));
+
+    	WebProjectDTO.Board board = dao.getBoardById(boardId);
+
+        board.setContent(board.getContent().replaceAll("\r\n", "<br/>"));
+        
         if (board != null) {
             dao.incrementViewCount(boardId);
             request.setAttribute("board", board);
+            
             request.getRequestDispatcher("board_view.jsp").forward(request, response);
         } else {
             response.sendRedirect("error.jsp");
