@@ -103,6 +103,12 @@ public class WebProjectDTO {
         private int likeCount;
         private String isDeleted;
 
+        // 파일 업로드 관련 멤버 변수 추가
+        private String originalFilename; // 업로드된 파일의 원래 이름
+        private String storedFilename;   // 서버에 저장된 파일 이름
+        private String filePath;         // 파일 경로
+        
+        
         // Getters and Setters
         public int getBoardId() {
             return boardId;
@@ -183,6 +189,33 @@ public class WebProjectDTO {
         public void setIsDeleted(String isDeleted) {
             this.isDeleted = isDeleted;
         }
+
+    
+
+        public String getOriginalFilename() {
+            return originalFilename;
+        }
+
+        public void setOriginalFilename(String originalFilename) {
+            this.originalFilename = originalFilename;
+        }
+
+        public String getStoredFilename() {
+            return storedFilename;
+        }
+
+        public void setStoredFilename(String storedFilename) {
+            this.storedFilename = storedFilename;
+        }
+
+        public String getFilePath() {
+            return filePath;
+        }
+
+        public void setFilePath(String filePath) {
+            this.filePath = filePath;
+        }    
+    
     }
 
     // Comment DTO

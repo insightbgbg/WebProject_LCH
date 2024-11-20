@@ -1,33 +1,64 @@
 package controller;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URLDecoder;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import model.WebProjectDAO;
 import model.WebProjectDTO;
 import utils.BoardPage;
 
 @WebServlet("/board")
+@MultipartConfig(
+		maxFileSize = 1024*1024*10,
+		maxRequestSize =  1024*1024*10
+)
 public class BoardController extends HttpServlet {
     private WebProjectDAO dao = new WebProjectDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-    	String action = request.getParameter("action");
+    	//String action = request.getParameter("action");
+    	
+    	String action = null;
+    	if (request.getContentType() != null && request.getContentType().startsWith("multipart/")) {
+    	    for (Part part : request.getParts()) {
+    	        if ("action".equals(part.getName())) {
+    	            action = new BufferedReader(new InputStreamReader(part.getInputStream()))
+    	                    .lines()
+    	                    .collect(Collectors.joining());
+    	            break;
+    	        }
+    	    }
+    	} else {
+    	    action = request.getParameter("action");
+    	}
+    	
         HttpSession session = request.getSession(false); // 기존 세션만 가져옴
         WebProjectDTO.Member loggedInUser = (session != null) ? (WebProjectDTO.Member) session.getAttribute("loggedInUser") : null;
 
+    	// 디버깅
+    	System.out.println("======컨트롤러 POST action ======= : " + action);
+    	System.out.println("======컨트롤러 POST loggedInUser ======= : " + loggedInUser);
+        
+        
         if (loggedInUser == null) { // 로그인 확인
             response.sendRedirect("login.jsp");
             return;
@@ -35,7 +66,9 @@ public class BoardController extends HttpServlet {
 
         switch (action) {
             case "add": // 글 작성
-                handleAddPost(request, response, loggedInUser);
+                //handleAddPost(request, response, loggedInUser);
+            	handleAddPostWithFile(request, response, loggedInUser);
+            	//handleAddPostWithFile(request, response);
                 break;
 
             case "edit": // 글 수정
@@ -112,6 +145,91 @@ public class BoardController extends HttpServlet {
         }
     }
 
+
+    private void handleDownload(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String storedFileName = request.getParameter("file");
+        String filePath = getServletContext().getRealPath("/") + File.separator + "uploads" + File.separator + storedFileName;
+
+        File downloadFile = new File(filePath);
+        if (!downloadFile.exists()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + storedFileName + "\"");
+
+        try (FileInputStream inStream = new FileInputStream(downloadFile);
+             OutputStream outStream = response.getOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inStream.read(buffer)) != -1) {
+                outStream.write(buffer, 0, bytesRead);
+            }
+        }
+    }
+    
+    
+    //private void handleAddPostWithFile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void handleAddPostWithFile(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws ServletException, IOException {
+    	//HttpSession session = request.getSession(false); // 기존 세션 가져오기
+        //WebProjectDTO.Member loggedInUser = (session != null) ? (WebProjectDTO.Member) session.getAttribute("loggedInUser") : null;
+
+        // 로그인 확인
+        if (loggedInUser == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+
+        String boardType = request.getParameter("boardType");
+        String title = request.getParameter("title");
+        String content = request.getParameter("content");
+
+    	// 디버깅
+    	System.out.println("======컨트롤러 handleAddPostWithFile : loggedInUser ====================" + loggedInUser);
+    	System.out.println("======컨트롤러 handleAddPostWithFile : boardType ====================" +boardType );
+    	System.out.println("======컨트롤러 handleAddPostWithFile : title ====================" + title);
+    	System.out.println("======컨트롤러 handleAddPostWithFile : content ====================" + content);
+    	
+        // 파일 업로드 처리
+        Part filePart = request.getPart("uploadedFile");
+        String originalFilename = null;
+        String storedFilename = null;
+        String filePath = null;
+
+        if (filePart != null && filePart.getSize() > 0) {
+            originalFilename = filePart.getSubmittedFileName();
+            storedFilename = System.currentTimeMillis() + "_" + originalFilename;
+            String uploadDir = getServletContext().getRealPath("/") + "uploads";
+
+            File uploadDirPath = new File(uploadDir);
+            if (!uploadDirPath.exists()) {
+                uploadDirPath.mkdir();
+            }
+
+            filePath = uploadDir + File.separator + storedFilename;
+            filePart.write(filePath);
+        }
+
+        // 게시글 데이터 생성
+        WebProjectDTO.Board board = new WebProjectDTO.Board();
+        board.setMemberId(loggedInUser.getMemberId()); // 세션에서 가져온 MemberId 설정
+        board.setBoardType(boardType);
+        board.setTitle(title);
+        board.setContent(content);
+        board.setOriginalFilename(originalFilename);
+        board.setStoredFilename(storedFilename);
+        board.setFilePath(filePath);
+
+        // DB에 저장
+        dao.addBoardWithFile(board);
+
+        // Redirect to list
+        response.sendRedirect("board?action=list&boardType=" + boardType);
+    }
+    
+    
+    
     // 글 작성 처리
     private void handleAddPost(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws ServletException, IOException {
 
@@ -136,8 +254,8 @@ public class BoardController extends HttpServlet {
         dao.addBoard(board);
         
     	// 디버깅
-    	//System.out.println("================== boardType ====================" + boardType);
-    	//System.out.println("================== title ====================" + title);
+    	System.out.println("================== boardType ====================" + boardType);
+    	System.out.println("================== title ====================" + title);
         
         //response.sendRedirect("board?action=list");
         response.sendRedirect("board?action=list&boardType=" + boardType);

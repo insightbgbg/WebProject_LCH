@@ -424,7 +424,33 @@ System.out.println("================== getContent : " +board.getContent());
         }
     }
 */
- // 게시물 추가    
+
+    public void addBoardWithFile(WebProjectDTO.Board board) {
+
+    	String sql = "INSERT INTO board (board_id, member_id, board_type, title, content, original_filename, stored_filename, file_path, created_at, view_count, like_count, is_deleted) " +
+                     "VALUES (board_seq.NEXTVAL, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 0, 0, 'N')";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, board.getMemberId());
+            pstmt.setString(2, board.getBoardType());
+            pstmt.setString(3, board.getTitle());
+            pstmt.setString(4, board.getContent());
+            pstmt.setString(5, board.getOriginalFilename());
+            pstmt.setString(6, board.getStoredFilename());
+            pstmt.setString(7, board.getFilePath());
+
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    
+    
+// 게시물 추가    
     public void addBoard(WebProjectDTO.Board board) {
         
     	String query = "INSERT INTO board (board_id, member_id, board_type, title, content, created_at, view_count, like_count, is_deleted) " +
@@ -444,7 +470,7 @@ System.out.println("================== getContent : " +board.getContent());
             
             // 쿼리 실행
             int result = pstmt.executeUpdate();
-            System.out.println("Rows inserted: " + result);
+            // System.out.println("Rows inserted: " + result);
 
         } catch (SQLException e) {
             e.printStackTrace();
