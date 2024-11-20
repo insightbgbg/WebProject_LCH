@@ -98,7 +98,7 @@ public class BoardController extends HttpServlet {
             case "list": // 게시글 목록
 
             	// 디버깅
-            	System.out.println("================== 컨트롤러 GET list 진입 ====================");
+            	// System.out.println("================== 컨트롤러 GET list 진입 ====================");
             	
             	handleList(request, response);
                 break;
@@ -136,10 +136,11 @@ public class BoardController extends HttpServlet {
         dao.addBoard(board);
         
     	// 디버깅
-    	System.out.println("================== boardType ====================" + boardType);
-    	System.out.println("================== title ====================" + title);
+    	//System.out.println("================== boardType ====================" + boardType);
+    	//System.out.println("================== title ====================" + title);
         
-        response.sendRedirect("board?action=list");
+        //response.sendRedirect("board?action=list");
+        response.sendRedirect("board?action=list&boardType=" + boardType);
     }
 
     // 글 수정 처리
@@ -149,7 +150,7 @@ public class BoardController extends HttpServlet {
         String content = request.getParameter("content");
 
  // 디버깅 (add 진입 여부)
-    	System.out.println("============ boardId,title,content =========== : " + boardId + ", " + title + ", " + content);	        	
+    	//System.out.println("============ boardId,title,content =========== : " + boardId + ", " + title + ", " + content);	        	
         
         
         WebProjectDTO.Board boardToEdit = dao.getBoardById(boardId);
@@ -284,7 +285,7 @@ public class BoardController extends HttpServlet {
         
         int totalCount = dao.selectBoardCount(map);
     	// 디버깅
-    	System.out.println("==============totalCount ================ : " +totalCount);
+    	//System.out.println("==============totalCount ================ : " +totalCount);
        
         int start = (pageNum - 1) * pageSize + 1;
         int end = pageNum * pageSize;
@@ -292,14 +293,14 @@ public class BoardController extends HttpServlet {
         map.put("end", end);
 
     	// 디버깅
-    	System.out.println("===== pageSize,blockPage,pageNum,pageTemp,start,end == : " +pageSize+","+blockPage+","+pageNum+","+pageTemp+","+start+","+end);
+    	// System.out.println("===== pageSize,blockPage,pageNum,pageTemp,start,end == : " +pageSize+","+blockPage+","+pageNum+","+pageTemp+","+start+","+end);
         
         
         // 데이터 조회
         List<WebProjectDTO.Board> boards = dao.getBoardListWithPaging(map);
         
         // 디버깅 (첫번째 데이터의 제목)
-        System.out.println("첫 번째 게시물의 제목: " + boards.get(0).getTitle());
+        // System.out.println("첫 번째 게시물의 제목: " + boards.get(0).getTitle());
         
         
         String pagingImg = BoardPage.pagingStr(totalCount, pageSize, blockPage, pageNum, "board?action=list&boardType=" + boardType);
@@ -318,6 +319,7 @@ public class BoardController extends HttpServlet {
     }
     
 
+    /*
     // 게시글 상세 보기
     private void handleView(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -336,4 +338,24 @@ public class BoardController extends HttpServlet {
             response.sendRedirect("error.jsp");
         }
     }
+	*/
+
+    private void handleView(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int boardId = Integer.parseInt(request.getParameter("boardId"));
+
+        WebProjectDTO.Board board = dao.getBoardById(boardId);
+        List<WebProjectDTO.Comment> comments = dao.getCommentsByBoardId(boardId); // 댓글 목록 가져오기
+
+        if (board != null) {
+            dao.incrementViewCount(boardId);
+            board.setContent(board.getContent().replaceAll("\r\n", "<br/>"));
+            request.setAttribute("board", board);
+            request.setAttribute("comments", comments); // 댓글 목록 추가
+            request.getRequestDispatcher("board_view.jsp").forward(request, response);
+        } else {
+            response.sendRedirect("error.jsp");
+        }
+    }
+    
+    
 }

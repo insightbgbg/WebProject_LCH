@@ -28,21 +28,19 @@ public class CommentController extends HttpServlet {
             return;
         }
 
-        switch (action) {
+        switch (action.toLowerCase()) {
             case "add":
                 handleAddComment(request, response, loggedInUser);
                 break;
-
             case "edit":
                 handleEditComment(request, response, loggedInUser);
                 break;
-
             case "delete":
                 handleDeleteComment(request, response, loggedInUser);
                 break;
-
             default:
                 response.sendRedirect("error.jsp");
+                break;
         }
     }
 
@@ -50,72 +48,91 @@ public class CommentController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
-        switch (action) {
-            case "list":
-                handleListComments(request, response);
-                break;
-
-            default:
-                response.sendRedirect("error.jsp");
+        if ("list".equalsIgnoreCase(action)) {
+            handleListComments(request, response);
+        } else {
+            response.sendRedirect("error.jsp");
         }
     }
 
     // 댓글 추가
     private void handleAddComment(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws IOException, ServletException {
-        int boardId = Integer.parseInt(request.getParameter("boardId"));
-        String content = request.getParameter("content");
+        try {
+            int boardId = Integer.parseInt(request.getParameter("boardId"));
+            String content = request.getParameter("content");
 
-        if (content == null || content.trim().isEmpty()) {
-            request.setAttribute("errorMessage", "Comment content cannot be empty.");
-            request.getRequestDispatcher("board?action=view&boardId=" + boardId).forward(request, response);
-            return;
+            if (content == null || content.trim().isEmpty()) {
+                request.setAttribute("errorMessage", "Comment content cannot be empty.");
+                request.getRequestDispatcher("board?action=view&boardId=" + boardId).forward(request, response);
+                return;
+            }
+
+            WebProjectDTO.Comment comment = new WebProjectDTO.Comment();
+            comment.setBoardId(boardId);
+            comment.setMemberId(loggedInUser.getMemberId());
+            comment.setContent(content);
+
+         // 디버깅 (댓글 추가)
+            System.out.println("======= comment POST add : boardId =================" + boardId);
+            System.out.println("======= comment POST add : content =================" + content);
+            System.out.println("======= comment POST add : MemberId =================" + loggedInUser.getMemberId());
+            
+            
+            dao.addComment(comment);
+            response.sendRedirect("board?action=view&boardId=" + boardId);
+        } catch (NumberFormatException e) {
+            response.sendRedirect("error.jsp");
         }
-
-        WebProjectDTO.Comment comment = new WebProjectDTO.Comment();
-        comment.setBoardId(boardId);
-        comment.setMemberId(loggedInUser.getMemberId());
-        comment.setContent(content);
-
-        dao.addComment(comment);
-        response.sendRedirect("board?action=view&boardId=" + boardId);
     }
 
     // 댓글 수정
     private void handleEditComment(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws IOException, ServletException {
-        int commentId = Integer.parseInt(request.getParameter("commentId"));
-        String content = request.getParameter("content");
+        try {
+            int commentId = Integer.parseInt(request.getParameter("commentId"));
+            String content = request.getParameter("content");
 
-        WebProjectDTO.Comment comment = dao.getCommentById(commentId);
-        if (comment != null && comment.getMemberId().equals(loggedInUser.getMemberId())) {
-            comment.setContent(content);
-            dao.updateComment(comment);
-        } else {
-            request.setAttribute("errorMessage", "You are not authorized to edit this comment.");
-            request.getRequestDispatcher("error.jsp").forward(request, response);
-            return;
+            WebProjectDTO.Comment comment = dao.getCommentById(commentId);
+            if (comment != null && comment.getMemberId().equals(loggedInUser.getMemberId())) {
+                comment.setContent(content);
+                dao.updateComment(comment);
+            } else {
+                request.setAttribute("errorMessage", "You are not authorized to edit this comment.");
+                request.getRequestDispatcher("error.jsp").forward(request, response);
+                return;
+            }
+
+            response.sendRedirect("board?action=view&boardId=" + comment.getBoardId());
+        } catch (NumberFormatException e) {
+            response.sendRedirect("error.jsp");
         }
-
-        response.sendRedirect("board?action=view&boardId=" + comment.getBoardId());
     }
 
     // 댓글 삭제
     private void handleDeleteComment(HttpServletRequest request, HttpServletResponse response, WebProjectDTO.Member loggedInUser) throws IOException {
-        int commentId = Integer.parseInt(request.getParameter("commentId"));
+        try {
+            int commentId = Integer.parseInt(request.getParameter("commentId"));
 
-        WebProjectDTO.Comment comment = dao.getCommentById(commentId);
-        if (comment != null && comment.getMemberId().equals(loggedInUser.getMemberId())) {
-            dao.deleteComment(commentId);
+            WebProjectDTO.Comment comment = dao.getCommentById(commentId);
+            if (comment != null && comment.getMemberId().equals(loggedInUser.getMemberId())) {
+                dao.deleteComment(commentId);
+            }
+
+            response.sendRedirect("board?action=view&boardId=" + comment.getBoardId());
+        } catch (NumberFormatException e) {
+            response.sendRedirect("error.jsp");
         }
-
-        response.sendRedirect("board?action=view&boardId=" + comment.getBoardId());
     }
 
     // 댓글 리스트
     private void handleListComments(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        int boardId = Integer.parseInt(request.getParameter("boardId"));
+        try {
+            int boardId = Integer.parseInt(request.getParameter("boardId"));
 
-        List<WebProjectDTO.Comment> comments = dao.getCommentsByBoardId(boardId);
-        request.setAttribute("comments", comments);
-        request.getRequestDispatcher("comments_list.jsp").forward(request, response);
+            List<WebProjectDTO.Comment> comments = dao.getCommentsByBoardId(boardId);
+            request.setAttribute("comments", comments);
+            request.getRequestDispatcher("comments_list.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect("error.jsp");
+        }
     }
 }

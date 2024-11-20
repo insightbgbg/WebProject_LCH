@@ -42,16 +42,28 @@ public class WebProjectDAO {
 
 	// 댓글 추가	
 	public void addComment(WebProjectDTO.Comment comment) {
-	    String sql = "INSERT INTO comments (comment_id, board_id, member_id, content, created_at, like_count, is_deleted) " +
-	                 "VALUES (comments_seq.NEXTVAL, ?, ?, ?, SYSDATE, 0, 'N')";
-	    try (Connection conn = getConnection();
-	         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+		String sql = "INSERT INTO comments (comment_id, board_id, member_id, content, created_at, like_count, is_deleted) " +
+	                 "VALUES (comment_seq.NEXTVAL, ?, ?, ?, SYSDATE, 0, 'N')";
+
+		try (Connection conn = getConnection();
+
+			PreparedStatement stmt = conn.prepareStatement(sql)) {
 	        stmt.setInt(1, comment.getBoardId());
 	        stmt.setString(2, comment.getMemberId());
 	        stmt.setString(3, comment.getContent());
+	        
+	         // 디버깅 (댓글 추가)
+            System.out.println("======= comment DAO add : sql =================" + sql);
+            System.out.println("======= comment DAO add : BoardId =================" + comment.getBoardId());
+            System.out.println("======= comment DAO add : MemberId =================" + comment.getMemberId());
+            System.out.println("======= comment DAO add : Content =================" + comment.getContent());
+	        
 	        stmt.executeUpdate();
-	    } catch (SQLException e) {
-	        e.printStackTrace();
+
+		} catch (SQLException e) {
+
+			e.printStackTrace();
 	    }
 	}
 
@@ -177,10 +189,11 @@ public class WebProjectDAO {
             stmt.setString(5, member.getPhone());
             
             int rows = stmt.executeUpdate();
-            System.out.println("Rows inserted: " + rows); // 디버깅용 출력
-        } catch (SQLException e) {
+            //System.out.println("Rows inserted: " + rows); // 디버깅용 출력
+
+		} catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("SQL error: " + e.getMessage()); // 에러 디버깅
+            //System.out.println("SQL error: " + e.getMessage()); // 에러 디버깅
         }
     }
     
@@ -426,7 +439,7 @@ System.out.println("================== getContent : " +board.getContent());
             pstmt.setString(4, board.getContent());
 
         	// 디버깅
-        	System.out.println("================== DAO addBoard query ====================" + query);
+        	//System.out.println("================== DAO addBoard query ====================" + query);
             
             
             // 쿼리 실행
@@ -596,13 +609,13 @@ System.out.println("================== getContent : " +board.getContent());
             pstmt.setInt(paramIndex, (int) map.get("start"));
 
             // SQL 및 매개변수 디버깅 출력
-            System.out.println("Query: " + sql);
+            /*System.out.println("Query: " + sql);
             System.out.println("Parameters: ");
             System.out.println("boardType: " + map.get("boardType"));
             System.out.println("searchField: " + map.get("searchField"));
             System.out.println("searchWord: " + map.get("searchWord"));
             System.out.println("start: " + map.get("start"));
-            System.out.println("end: " + map.get("end"));
+            System.out.println("end: " + map.get("end"));*/
 
             // SQL 실행
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -620,11 +633,11 @@ System.out.println("================== getContent : " +board.getContent());
                     board.setIsDeleted(rs.getString("is_deleted"));
 
                     // 디버깅 (board)
-                    System.out.println("board_id: " + board.getBoardId());
+                    /*System.out.println("board_id: " + board.getBoardId());
                     System.out.println("member_id: " + board.getMemberId());
                     System.out.println("board_type: " + board.getBoardType());
                     System.out.println("title: " + board.getTitle());
-                    System.out.println("content: " + board.getContent());
+                    System.out.println("content: " + board.getContent());*/
                     
                     boards.add(board);
                 }
