@@ -1,8 +1,3 @@
-/common/
-/controller/
-/fileupload/
-/membership/
 /model/
-/model2/
-/servlet/
+/controller/
 /utils/

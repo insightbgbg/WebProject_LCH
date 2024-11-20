@@ -2,61 +2,100 @@ package utils;
 
 public class BoardPage {
 
-	/*
-	 totalCount : 전체 post 갯수
-	 pageSize : web.xml parameter, posts 수 / 1page
-	 blockPage : web.xml parameter, pages 수 / 1block
-	 pageNum : 현재 page num
-	 reqUrl : 게시판 목록의 요청명 또는 현재 page URL
-	 */
+/*	public static String pagingStr(int totalCount, int pageSize, int blockPage, int pageNum, String url) {
+	    StringBuilder pagingStr = new StringBuilder();
+
+	    // 실제 페이징 계산 로직
+	    int totalPage = (int) Math.ceil((double) totalCount / pageSize);
+
+	    // 페이지가 1개인 경우 페이징 링크를 표시하지 않음
+	    if (totalPage <= 1) {
+	        return ""; // 빈 문자열 반환
+	    }
+
+	    
+	    int startPage = ((pageNum - 1) / blockPage) * blockPage + 1;
+	    int endPage = startPage + blockPage - 1;
+	    if (endPage > totalPage) endPage = totalPage;
+
+	    // 이전 페이지
+	    if (pageNum > blockPage) {
+	        pagingStr.append("<a href='").append(url).append("&pageNum=").append(startPage - 1).append("'>Previous</a>");
+	    }
+
+	    // 페이지 번호
+	    for (int i = startPage; i <= endPage; i++) {
+	        if (i == pageNum) {
+	            pagingStr.append("<span>").append(i).append("</span>");
+	        } else {
+	            pagingStr.append("<a href='").append(url).append("&pageNum=").append(i).append("'>").append(i).append("</a>");
+	        }
+	    }
+
+	    // 다음 페이지
+	    if (endPage < totalPage) {
+	        pagingStr.append("<a href='").append(url).append("&pageNum=").append(endPage + 1).append("'>Next</a>");
+	    }
+
+	    return pagingStr.toString();
+	}
+
+} */
 	
-	public static String pagingStr(int totalCount, int pageSize, int blockPage,
-                                   int pageNum, String reqUrl) {
-        String pagingStr = "";
+	public static String pagingStr(int totalCount, int pageSize, int blockPage, int pageNum, String baseUrl) {
+	    StringBuilder pagingStr = new StringBuilder();
 
-        /*
-         totalPages : 전체 page 수 계산 (ceil : 무조건 올림)
-         	(double) : 계산 값을 double로 함으로써 소수점 이하 값 살리기 (추가하지 않으면 int로 표현되고, 소수점이 이하 값 삭제됨)
-         */
-        int totalPages = (int) (Math.ceil(((double) totalCount / pageSize)));
+	    int totalPages = (int) Math.ceil((double) totalCount / pageSize); // 총 페이지 수
+	    int currentBlock = (int) Math.ceil((double) pageNum / blockPage); // 현재 블록
+	    int startPage = (currentBlock - 1) * blockPage + 1; // 블록 시작 페이지
+	    int endPage = Math.min(currentBlock * blockPage, totalPages); // 블록 끝 페이지
 
-        // '이전 page block 바로가기' 출력
-        /*
-          pageTemp : page block에서 첫번째 page 번호 
-          				blockPage는 web.xml에서 5로 설정, 1,6,11,16,21 ....
-         */
-        int pageTemp = (((pageNum - 1) / blockPage) * blockPage) + 1;
-        
-        // 첫번째 block이 아닐 때만 '이전 page 바로가기' 링크 출력
-        if (pageTemp != 1) {
-            pagingStr += "<a href='" + reqUrl + "?pageNum=1'>[첫 페이지]</a>";
-            pagingStr += "&nbsp;";
-            pagingStr += "<a href='" + reqUrl + "?pageNum=" + (pageTemp - 1)
-                         + "'>[이전 블록]</a>";
-        }
+	    pagingStr.append("<nav aria-label='Page navigation'>");
+	    pagingStr.append("<ul class='pagination justify-content-center'>");
 
-        int blockCount = 1;
-        while (blockCount <= blockPage && pageTemp <= totalPages) {
-            // 현재 page는 링크 걸지 않음
-        	if (pageTemp == pageNum) {
-                pagingStr += "&nbsp;" + pageTemp + "&nbsp;";
-            // 현재 page가 아니면 링크 부착
-        	} else {
-                pagingStr += "&nbsp;<a href='" + reqUrl + "?pageNum=" + pageTemp
-                             + "'>" + pageTemp + "</a>&nbsp;";
-            }
-            pageTemp++;
-            blockCount++;
-        }
+	    // 이전 블록으로 이동
+	    if (currentBlock > 1) {
+	        pagingStr.append("<li class='page-item'>");
+	        pagingStr.append("<a class='page-link' href='").append(baseUrl).append("&pageNum=").append(startPage - 1)
+	                 .append("' aria-label='Previous'>");
+	        pagingStr.append("<span aria-hidden='true'>&laquo;</span>");
+	        pagingStr.append("</a></li>");
+	    } else {
+	        pagingStr.append("<li class='page-item disabled'>");
+	        pagingStr.append("<span class='page-link'>&laquo;</span>");
+	        pagingStr.append("</li>");
+	    }
 
-        if (pageTemp <= totalPages) {
-            pagingStr += "<a href='" + reqUrl + "?pageNum=" + pageTemp
-                         + "'>[다음 블록]</a>";
-            pagingStr += "&nbsp;";
-            pagingStr += "<a href='" + reqUrl + "?pageNum=" + totalPages
-                         + "'>[마지막 페이지]</a>";
-        }
+	    // 페이지 번호 출력
+	    for (int i = startPage; i <= endPage; i++) {
+	        if (i == pageNum) {
+	            pagingStr.append("<li class='page-item active'><span class='page-link'>").append(i).append("</span></li>");
+	        } else {
+	            pagingStr.append("<li class='page-item'>");
+	            pagingStr.append("<a class='page-link' href='").append(baseUrl).append("&pageNum=").append(i)
+	                     .append("'>").append(i).append("</a>");
+	            pagingStr.append("</li>");
+	        }
+	    }
 
-        return pagingStr;
-    }
-}
+	    // 다음 블록으로 이동
+	    if (currentBlock < (int) Math.ceil((double) totalPages / blockPage)) {
+	        pagingStr.append("<li class='page-item'>");
+	        pagingStr.append("<a class='page-link' href='").append(baseUrl).append("&pageNum=").append(endPage + 1)
+	                 .append("' aria-label='Next'>");
+	        pagingStr.append("<span aria-hidden='true'>&raquo;</span>");
+	        pagingStr.append("</a></li>");
+	    } else {
+	        pagingStr.append("<li class='page-item disabled'>");
+	        pagingStr.append("<span class='page-link'>&raquo;</span>");
+	        pagingStr.append("</li>");
+	    }
+
+	    pagingStr.append("</ul>");
+	    pagingStr.append("</nav>");
+
+	    return pagingStr.toString();
+	}
+
+	
+}	

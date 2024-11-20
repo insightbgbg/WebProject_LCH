@@ -49,7 +49,7 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.jsp">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
                 </div>
@@ -61,7 +61,7 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link" href="index.jsp">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -127,9 +127,19 @@
                 <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Login Screens:</h6>
-                        <a class="collapse-item" href="login.html">Login</a>
-                        <a class="collapse-item" href="register.html">Register</a>
-                        <a class="collapse-item" href="forgot-password.html">Forgot Password</a>
+                        <!-- <a class="collapse-item" href="login.jsp">Login</a> -->
+						<%
+						    // session에서 loggedInUser 객체를 가져오고 타입을 Member로 캐스팅
+						    /* HttpSession session = request.getSession(false); */
+						    model.WebProjectDTO.Member loggedInUser = (session != null) ? (model.WebProjectDTO.Member) session.getAttribute("loggedInUser") : null;
+						    boolean isLoggedIn = loggedInUser != null; // 로그인 상태 확인
+						%>
+						<a class="collapse-item" href="<%= isLoggedIn ? "logout.jsp" : "login.jsp" %>">
+						    <%= isLoggedIn ? "Logout (" + loggedInUser.getMemberId() + ")" : "Login" %>
+						</a>                        
+                        <a class="collapse-item" href="register.jsp">Register</a>
+						<a class="collapse-item" href="update_member.jsp">Update Profile</a>
+                        <a class="collapse-item" href="forgot-password.jsp">Forgot Password</a>
                     </div>
                 </div>
             </li>
@@ -143,9 +153,14 @@
                 </a>
                 <div id="collapseBoard" class="collapse" aria-labelledby="headingBoard" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-item" href="./board.do">Free-Board</a>
+<!--                         <a class="collapse-item" href="./board.do">Free-Board</a>
                         <a class="collapse-item" href="./board.do">Q&A-Board</a>
                         <a class="collapse-item" href="./board.do">File Board</a>
+ -->
+			            <a class="collapse-item" href="board?action=list&boardType=free">Free-Board</a>
+			            <a class="collapse-item" href="board?action=list&boardType=qa">Q&A-Board</a>
+			            <a class="collapse-item" href="board?action=list&boardType=file">File Board</a>
+
                     </div>
                 </div>
             </li>
@@ -757,7 +772,7 @@
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <a class="btn btn-primary" href="login.jsp">Logout</a>
                 </div>
             </div>
         </div>

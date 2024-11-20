@@ -6,12 +6,7 @@
 
 	<!-- 최초 실행 -->
   <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
     <welcome-file>index.jsp</welcome-file>
-    <welcome-file>index.htm</welcome-file>
-    <welcome-file>default.html</welcome-file>
-    <welcome-file>default.jsp</welcome-file>
-    <welcome-file>default.htm</welcome-file>
   </welcome-file-list>
 
 <!-- 전역 상수 -->
@@ -33,7 +28,7 @@
 
 	<context-param>
 		<param-name>OracleId</param-name>
-		<param-value>education</param-value>
+		<param-value>webproject_db</param-value>
 	</context-param>	
 
 	<context-param>
@@ -118,12 +113,12 @@
 	<!-- 1 page 당 posts 갯수 -->
 	<context-param>
 	    <param-name>POSTS_PER_PAGE</param-name>
-	    <param-value>10</param-value>
+	    <param-value>3</param-value>
 	</context-param>
 	<!-- 1 block 당 pages 갯수 -->
 	<context-param>
 	    <param-name>PAGES_PER_BLOCK</param-name>
-	    <param-value>5</param-value>
+	    <param-value>2</param-value>
 	</context-param>
 
 	<!-- servlet mapping : 게시판 목록 (Model2 type, 페이징 기능 추가)  -->
@@ -135,5 +130,6 @@
 	    <servlet-name>MVCBoardListPage</servlet-name>
 	    <url-pattern>/mvcboard/listPage.do</url-pattern>
 	</servlet-mapping>
+
 
 </web-app>
