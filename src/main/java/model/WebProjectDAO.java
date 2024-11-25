@@ -341,7 +341,7 @@ public class WebProjectDAO {
         }
     }
     
-    
+/*    
  // 특정 게시물 조회
     public WebProjectDTO.Board getBoardById(int boardId) {
         String sql = "SELECT * FROM board WHERE board_id = ?";
@@ -369,7 +369,45 @@ public class WebProjectDAO {
         }
         return board;
     }
+*/
+    
+ // 단일 게시글 조회
+    public WebProjectDTO.Board getBoardById(int boardId) {
+        WebProjectDTO.Board board = null;
+        String sql = "SELECT * FROM board WHERE board_id = ? AND is_deleted = 'N'";
 
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, boardId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    board = new WebProjectDTO.Board();
+                    board.setBoardId(rs.getInt("board_id"));
+                    board.setMemberId(rs.getString("member_id"));
+                    board.setBoardType(rs.getString("board_type"));
+                    board.setTitle(rs.getString("title"));
+                    board.setContent(rs.getString("content"));
+                    board.setOriginalFilename(rs.getString("original_filename")); // 추가
+                    board.setStoredFilename(rs.getString("stored_filename"));     // 추가
+                    board.setFilePath(rs.getString("file_path"));                 // 추가
+                    board.setCreatedAt(rs.getDate("created_at"));
+                    board.setUpdatedAt(rs.getDate("updated_at"));
+                    board.setViewCount(rs.getInt("view_count"));
+                    board.setLikeCount(rs.getInt("like_count"));
+                    board.setIsDeleted(rs.getString("is_deleted"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return board;
+    }
+    
+    
+    
+    
  // 조회수 증가
     public void incrementViewCount(int boardId) {
         String sql = "UPDATE board SET view_count = view_count + 1 WHERE board_id = ?";

@@ -209,6 +209,13 @@ public class BoardController extends HttpServlet {
 
             filePath = uploadDir + File.separator + storedFilename;
             filePart.write(filePath);
+
+        	// 디버깅
+        	System.out.println("======컨트롤러 handleAddPostWithFile : originalFilename ====================" + originalFilename);
+        	System.out.println("======컨트롤러 handleAddPostWithFile : storedFilename ====================" +storedFilename );
+        	System.out.println("======컨트롤러 handleAddPostWithFile : filePath ====================" + filePath);
+       
+        
         }
 
         // 게시글 데이터 생성
@@ -458,6 +465,7 @@ public class BoardController extends HttpServlet {
     }
 	*/
 
+/*    
     private void handleView(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         int boardId = Integer.parseInt(request.getParameter("boardId"));
 
@@ -474,6 +482,23 @@ public class BoardController extends HttpServlet {
             response.sendRedirect("error.jsp");
         }
     }
+*/
+    
+    private void handleView(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int boardId = Integer.parseInt(request.getParameter("boardId"));
+
+        WebProjectDTO.Board board = dao.getBoardById(boardId);
+
+        if (board != null) {
+            dao.incrementViewCount(boardId); // 조회수 증가
+            request.setAttribute("board", board);
+        } else {
+            request.setAttribute("errorMessage", "The requested board post does not exist.");
+        }
+
+        request.getRequestDispatcher("board_view.jsp").forward(request, response);
+    }
+    
     
     
 }
